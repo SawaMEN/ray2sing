@@ -1,0 +1,36 @@
+name: Apply tested core compatibility patch to ray2sing
+on:
+  push:
+    branches:
+      - sync/core-5.5.5-20261105
+    paths:
+      - .github/workflows/apply-core-5.5.5-patch.yml
+permissions:
+  contents: write
+jobs:
+  apply-compatibility:
+    if: github.repository == 'SawaMEN/ray2sing'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Check base and apply already prepared compatibility changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD~)" = ed1a4b12297992de89adf2a7a91ce5ec397d4819
+          curl -fsSL --retry 4 \
+            https://raw.githubusercontent.com/SawaMEN/hiddify-core/e92ce4d0afab9bf87f313b19a201ab1eb51b97fc/docs/integration/20261105-ray2sing.patch \
+            -o /tmp/ray2sing.patch
+          test "$(git hash-object /tmp/ray2sing.patch)" = e70fe42cb50046a45fdd68bcea3a4b3071b53ecb
+          git apply --check /tmp/ray2sing.patch
+          git apply --index /tmp/ray2sing.patch
+          git diff --cached --check
+          git diff --cached --stat
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix(parser): align AWG, XDrive and Soar with custom hiddify engine"
+          git push origin HEAD:refs/heads/sync/core-5.5.5-20261105
