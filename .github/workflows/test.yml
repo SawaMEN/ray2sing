@@ -2,26 +2,38 @@ name: Go Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 55
     steps:
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.21
-      id: go
-
-    - name: Check out code
-      uses: actions/checkout@v3
-
-    - name: Get dependencies
-      run: go mod download
-
-    - name: Run tests
-      run: go test ./...
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Checkout exact compatible sibling engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth=1 --recurse-submodules https://github.com/SawaMEN/hiddify-sing-box.git ../hiddify-sing-box
+          if [ "$(git -C ../hiddify-sing-box rev-parse HEAD)" != "0dcb695697518f7999359ebbdcd0c8daf4d13e67" ]; then
+            git -C ../hiddify-sing-box fetch --depth=1 origin 0dcb695697518f7999359ebbdcd0c8daf4d13e67
+            git -C ../hiddify-sing-box checkout 0dcb695697518f7999359ebbdcd0c8daf4d13e67
+            git -C ../hiddify-sing-box submodule update --init --recursive
+          fi
+          test "$(git -C ../hiddify-sing-box rev-parse HEAD)" = 0dcb695697518f7999359ebbdcd0c8daf4d13e67
+      - name: Download parser dependencies
+        run: go mod download all
+      - name: Parser compatibility regressions
+        run: go test -mod=readonly -race -ldflags=-checklinkname=0 ./ray2sing/... ./ray2sing_test/...

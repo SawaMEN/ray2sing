@@ -61,7 +61,7 @@ func getXDriveTransport(decoded map[string]string) (*option.V2RayTransportOption
 		FlushIntervalMs:   settings.FlushIntervalMs,
 		PollIntervalMs:    settings.PollIntervalMs,
 		MaxPollIntervalMs: settings.MaxPollIntervalMs,
-		SessionTTLSeconds: settings.SessionTTLSeconds,
+		SessionTtlSeconds: settings.SessionTTLSeconds,
 		Concurrency:       settings.Concurrency,
 		EagerWindowMs:     settings.EagerWindowMs,
 		HoleTimeoutMs:     settings.HoleTimeoutMs,
