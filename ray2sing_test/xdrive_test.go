@@ -12,7 +12,7 @@ import (
 
 // An XDRIVE link carries Xray's xdriveSettings as JSON in xdrive=, with VLESS encryption.
 func TestXDriveLink(t *testing.T) {
-	settings := `{"service":"google-drive","remoteFolder":"1AbC","secrets":["id","secret","token"],"pollIntervalMs":100,"xmux":{"maxConnections":"2-4"},"address":"216.239.38.120","port":443}`
+	settings := `{"service":"google-drive","remoteFolder":"1AbC","secrets":["id","secret","token"],"pollIntervalMs":100,"sessionTtlSeconds":77,"xmux":{"maxConnections":"2-4"},"address":"216.239.38.120","port":443}`
 	link := "vless://dffb7646-1656-427a-8187-9c056a6a5fd5@127.0.0.1:1?encryption=mlkem768x25519plus.native.0rtt.9zy0chrl2-czYBSv11y34twAmvJlMoJIDhhMGc--lDo&security=tls&fp=chrome&type=xdrive&xdrive=" + url.QueryEscape(settings) + "#xdrive"
 	options, err := ray2sing.Ray2SingboxOptions(libbox.BaseContext(nil), link, false)
 	if err != nil {
@@ -23,7 +23,7 @@ func TestXDriveLink(t *testing.T) {
 		t.Fatalf("transport %+v", vless.Transport)
 	}
 	xdrive := vless.Transport.XDriveOptions
-	if xdrive.Service != "google-drive" || xdrive.RemoteFolder != "1AbC" || len(xdrive.Secrets) != 3 || xdrive.PollIntervalMs != 100 {
+	if xdrive.Service != "google-drive" || xdrive.RemoteFolder != "1AbC" || len(xdrive.Secrets) != 3 || xdrive.PollIntervalMs != 100 || xdrive.SessionTtlSeconds != 77 {
 		t.Fatalf("xdrive %+v", xdrive)
 	}
 	if xdrive.Xmux == nil || xdrive.Xmux.MaxConnections.From != 2 || xdrive.Xmux.MaxConnections.To != 4 {

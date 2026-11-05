@@ -41,12 +41,12 @@ func TestFinalMaskVless(t *testing.T) {
 		t.Fatalf("settings not kept: %s", fm.TCP[1].Settings)
 	}
 
-	// the converted config carries it as finalmask
+	// Both supported engine spellings retain the converted final mask.
 	out, err := ray2sing.Ray2Singbox(context.Background(), link, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(out), `"finalmask"`) {
+	if !strings.Contains(string(out), `"finalmask"`) && !strings.Contains(string(out), `"final_mask"`) {
 		t.Fatalf("finalmask missing from %s", out)
 	}
 }

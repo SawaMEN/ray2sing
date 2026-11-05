@@ -57,7 +57,11 @@ func soarOutbound(params map[string]string, name string) (*T.Outbound, error) {
 		return nil, fmt.Errorf("soar link: the tunnel domain is missing")
 	}
 	// a "+" of a standard base64 key in a query arrives as a space
-	key := strings.ReplaceAll(strings.TrimSpace(soarKeyParam(params)), " ", "+")
+	rawKey := soarKeyParam(params)
+	key := strings.ReplaceAll(rawKey, " ", "+")
+	if _, err := soaroutbound.ParsePublicKey(key); err != nil {
+		key = strings.ReplaceAll(strings.TrimSpace(rawKey), " ", "+")
+	}
 	if _, err := soaroutbound.ParsePublicKey(key); err != nil {
 		return nil, fmt.Errorf("soar link: %w", err)
 	}
