@@ -17,6 +17,7 @@ func PsiphonSingbox(url string) (*T.Outbound, error) {
 		RemoteServerListDownloadFilename:   getOneOfN(u.Params, "", "remote_server_list_download_filename"),
 		RemoteServerListSignaturePublicKey: getOneOfN(u.Params, "", "remote_server_list_signature_public_key"),
 	}
+	applyPsiphonScanner(&opts, u.Params)
 	out := &T.Outbound{
 		Type:    C.TypePsiphon,
 		Tag:     u.Name,
