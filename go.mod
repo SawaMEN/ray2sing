@@ -351,7 +351,7 @@ require (
 //replace github.com/sagernet/sing-box => github.com/hiddify/hiddify-sing-box v1.13.0-rc.2.0.20260215114412-cabace8fd3ce
 replace github.com/sagernet/sing-box => ../hiddify-sing-box
 
-// replace github.com/xtls/xray-core => github.com/hiddify/xray-core v0.0.0-20260124181826-59e6569c13e9
+replace github.com/xtls/xray-core => ../hiddify-sing-box/third_party/xray-core
 replace github.com/sagernet/wireguard-go => ../hiddify-sing-box/replace/wireguard-go
 
 replace github.com/sagernet/sing-dns => github.com/shtorm-7/sing-dns v0.4.6-extended-1.0.0
@@ -362,7 +362,7 @@ replace github.com/Psiphon-Labs/quic-go => ../hiddify-sing-box/replace/psiphon-q
 
 replace github.com/Psiphon-Labs/psiphon-tls => ../hiddify-sing-box/replace/psiphon-tls
 
-replace github.com/sagernet/sing-vmess => ../hiddify-sing-box/replace/sing-vmess
+replace github.com/sagernet/sing-vmess => ../hiddify-sing-box/third_party/sing-vmess
 
 replace github.com/sagernet/tailscale => ../hiddify-sing-box/replace/tailscale
 
@@ -388,6 +388,6 @@ replace github.com/sagernet/gvisor => ../hiddify-sing-box/replace/gvisor
 
 replace github.com/sagernet/sing-mux => ../hiddify-sing-box/replace/sing-mux
 
-replace github.com/metacubex/utls => github.com/Leadaxe/utls-lx v1.8.8-0.20261011005638-ad69b191e2f8
+replace github.com/metacubex/utls => ../hiddify-sing-box/replace/utls-native
 
 replace github.com/sagernet/sing-openvpn => github.com/sagernet/sing-openvpn v0.0.0-20260903200517-e060dda5b1f1

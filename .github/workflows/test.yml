@@ -10,30 +10,34 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ray2sing-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7.1.0
         with:
           go-version-file: go.mod
           cache: false
-      - name: Checkout exact compatible sibling engine
+      - name: Checkout hiddify-core's verified sibling engine
         shell: bash
         run: |
           set -euo pipefail
           git clone --depth=1 --recurse-submodules https://github.com/SawaMEN/hiddify-sing-box.git ../hiddify-sing-box
-          if [ "$(git -C ../hiddify-sing-box rev-parse HEAD)" != "0dcb695697518f7999359ebbdcd0c8daf4d13e67" ]; then
-            git -C ../hiddify-sing-box fetch --depth=1 origin 0dcb695697518f7999359ebbdcd0c8daf4d13e67
-            git -C ../hiddify-sing-box checkout 0dcb695697518f7999359ebbdcd0c8daf4d13e67
+          if [ "$(git -C ../hiddify-sing-box rev-parse HEAD)" != "a64b3444a3f408a5651a027bc4542af713c6b35c" ]; then
+            git -C ../hiddify-sing-box fetch --depth=1 origin a64b3444a3f408a5651a027bc4542af713c6b35c
+            git -C ../hiddify-sing-box checkout a64b3444a3f408a5651a027bc4542af713c6b35c
             git -C ../hiddify-sing-box submodule update --init --recursive
           fi
-          test "$(git -C ../hiddify-sing-box rev-parse HEAD)" = 0dcb695697518f7999359ebbdcd0c8daf4d13e67
+          test "$(git -C ../hiddify-sing-box rev-parse HEAD)" = a64b3444a3f408a5651a027bc4542af713c6b35c
       - name: Download parser dependencies
         run: go mod download all
-      - name: Parser compatibility regressions
-        run: go test -mod=readonly -race -ldflags=-checklinkname=0 ./ray2sing/... ./ray2sing_test/...
+      - name: Test parser, CLI and examples
+        run: go test -mod=readonly -race -ldflags=-checklinkname=0 ./...

@@ -1,8 +1,10 @@
 package ray2sing
 
 import (
+	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
 	T "github.com/sagernet/sing-box/option"
@@ -40,7 +42,22 @@ func ParseUrl(inputURL string, defaultPort uint16) (*UrlSchema, error) {
 	if err != nil {
 		return nil, err
 	}
-	port := toUInt16(parsedURL.Port(), defaultPort)
+	port := defaultPort
+	if rawPort := parsedURL.Port(); rawPort != "" {
+		parsedPort, err := strconv.ParseUint(rawPort, 10, 16)
+		if err != nil || parsedPort == 0 {
+			return nil, fmt.Errorf("invalid server port")
+		}
+		port = uint16(parsedPort)
+	}
+	for _, portRange := range portRanges {
+		bounds := strings.SplitN(portRange, ":", 2)
+		start, startErr := strconv.ParseUint(bounds[0], 10, 16)
+		end, endErr := strconv.ParseUint(bounds[1], 10, 16)
+		if startErr != nil || endErr != nil || start == 0 || end == 0 || start > end {
+			return nil, fmt.Errorf("invalid server port range")
+		}
+	}
 
 	name := parsedURL.Fragment
 	if i := strings.IndexAny(name, "\r\n"); i >= 0 {
