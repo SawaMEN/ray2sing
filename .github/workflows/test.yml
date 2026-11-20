@@ -39,16 +39,11 @@ jobs:
           test "$(git -C ../hiddify-sing-box rev-parse HEAD)" = a64b3444a3f408a5651a027bc4542af713c6b35c
       - name: Download parser dependencies
         run: go mod download all
-      - name: Normalize Go modules and report changes
+      - name: Verify Go module files are normalized
         shell: bash
         run: |
           set -euo pipefail
           go mod tidy
-          echo '===GO_MOD_DIFF_BEGIN==='
-          git diff -- go.mod
-          echo '===GO_MOD_DIFF_END==='
-          echo '===GO_SUM_DIFF_BEGIN==='
-          git diff -- go.sum
-          echo '===GO_SUM_DIFF_END==='
+          git diff --exit-code -- go.mod go.sum
       - name: Test parser, CLI and examples
         run: go test -mod=readonly -race -ldflags=-checklinkname=0 ./...
