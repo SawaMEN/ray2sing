@@ -35,5 +35,5 @@ jobs:
           test "$(git -C ../hiddify-sing-box rev-parse HEAD)" = 0dcb695697518f7999359ebbdcd0c8daf4d13e67
       - name: Download parser dependencies
         run: go mod download all
-      - name: Parser compatibility regressions
-        run: go test -mod=readonly -race -ldflags=-checklinkname=0 ./ray2sing/... ./ray2sing_test/...
+      - name: Test parser, CLI and examples
+        run: go test -mod=readonly -race -ldflags=-checklinkname=0 ./...
