@@ -31,12 +31,6 @@ func readConfigInput(args []string, filePath string, stdin io.Reader) (string, e
 		defer file.Close()
 		reader = file
 	}
-	if filePath == "" {
-		if stat, err := os.Stdin.Stat(); err == nil && stat.Mode()&os.ModeCharDevice != 0 {
-			return "", errors.New("provide one or more links, -file, or configuration text on stdin")
-		}
-	}
-
 	data, err := io.ReadAll(io.LimitReader(reader, maxInputBytes+1))
 	if err != nil {
 		return "", err
@@ -57,6 +51,13 @@ func main() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	if *file == "" && flag.NArg() == 0 {
+		if stat, err := os.Stdin.Stat(); err == nil && stat.Mode()&os.ModeCharDevice != 0 {
+			fmt.Fprintln(os.Stderr, "Input error: provide links, -file, or pipe text through stdin")
+			os.Exit(2)
+		}
+	}
 
 	input, err := readConfigInput(flag.Args(), *file, os.Stdin)
 	if err != nil {
