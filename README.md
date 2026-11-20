@@ -7,7 +7,7 @@ Go library for converting V2Ray/Xray subscription links and WireGuard-family lin
 The Go module path is intentionally kept as `github.com/hiddify/ray2sing` for existing consumers. The `go.mod` file uses local `replace` directives pointing to `../hiddify-sing-box` and its native replacements: **clone both repositories into the same parent directory**. The CI workflow pins an exact compatible engine commit and uses the Go version specified in `go.mod`. Do not swap the module with upstream `github.com/sagernet/sing-box` without also adapting custom protocol options and running the full test suite.
 
 ```bash
-git clone https://github.com/SawaMEN/hiddify-sing-box.git
+git clone --recurse-submodules https://github.com/SawaMEN/hiddify-sing-box.git
 git clone https://github.com/SawaMEN/ray2sing.git
 cd ray2sing
 go test -mod=readonly -race -ldflags=-checklinkname=0 ./...
