@@ -1,6 +1,7 @@
 package ray2sing
 
 import (
+	"fmt"
 	"strings"
 
 	T "github.com/sagernet/sing-box/option"
@@ -17,23 +18,24 @@ func DirectXray(vlessURL string) (*T.Outbound, error) {
 	// if packetEncoding==""{
 	// 	packetEncoding="xudp"
 	// }
-	frag, err := getOneOf(decoded, "frg", "fragment")
-	fragdata := map[string]any{}
-	if err != nil && frag != "" {
-		frags := strings.Split(frag, ",")
-		fragdata = map[string]any{
-			"packets":  frags[0],
-			"length":   frags[1],
-			"interval": frags[2],
+	fragment := getOneOfN(decoded, "", "frg", "fragment")
+	settings := map[string]any{}
+	if fragment != "" {
+		parts := strings.Split(fragment, ",")
+		if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+			return nil, fmt.Errorf("invalid Xray fragment: expected packets,length,interval")
+		}
+		settings["fragment"] = map[string]any{
+			"packets":  parts[0],
+			"length":   parts[1],
+			"interval": parts[2],
 		}
 	}
 
 	return makeXrayOptions(decoded, map[string]any{
 		"protocol":       "freedom",
 		"domainStrategy": "AsIs",
-		"settings": map[string]any{
-			"fragment": fragdata,
-		},
+		"settings": settings,
 		"streamSettings": map[string]any{
 			"sockopt": map[string]any{
 				"tcpNoDelay":       true,
