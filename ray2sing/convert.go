@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"os"
-	"runtime"
 
 	"strconv"
 	"strings"
@@ -71,16 +69,6 @@ var xrayConfigTypes = map[string]ParserFunc{
 	"direct://": DirectXray,
 }
 
-func decodeUrlBase64IfNeeded(config string) string {
-	splt := strings.SplitN(config, "://", 2)
-	if len(splt) < 2 {
-		//return config
-	}
-	rest, _ := decodeBase64IfNeeded(splt[1])
-	// fmt.Println(rest, err)
-	return splt[0] + "://" + rest
-}
-
 type OutEnd struct {
 	outbound *T.Outbound
 	endpoint *T.Endpoint
@@ -90,10 +78,7 @@ func processSingleConfig(config string, useXrayWhenPossible bool) (outend *OutEn
 	defer func() {
 		if r := recover(); r != nil {
 			outend = nil
-			stackTrace := make([]byte, 1024)
-			s := runtime.Stack(stackTrace, false)
-			stackStr := fmt.Sprint(string(stackTrace[:s]))
-			err = E.New("Error in Parsing:", r, "Stack trace:", stackStr)
+			err = fmt.Errorf("panic while parsing configuration (%T)", r)
 		}
 	}()
 	// configDecoded := decodeUrlBase64IfNeeded(config)
@@ -144,50 +129,55 @@ func processSingleConfig(config string, useXrayWhenPossible bool) (outend *OutEn
 }
 
 func GenerateConfigLite(input string, useXrayWhenPossible bool) (*option.Options, error) {
-
 	configArray := expandDecodedConfig(input)
 
 	var outbounds []T.Outbound
 	var endpoints []T.Endpoint
-	var declaredIPv6 map[string]bool // a link's ipv6=1 or ipv6=0, by the final tag
+	var declaredIPv6 map[string]bool // ipv6=1 or ipv6=0, indexed by final tag
 	counter := 0
+	failedConfigs := 0
 
 	for _, config := range configArray {
 		if len(config) < 5 || config[0] == '#' || config[0] == '/' {
 			continue
 		}
-		detourTag := ""
 		config = unescapeHTMLAmpersand(config)
+
+		// A detour chain is atomic: never install only its inner hops when
+		// an outer hop is malformed. That can unintentionally bypass the
+		// intended proxy, and its IPv6 metadata must not survive either.
+		var chainOutbounds []T.Outbound
+		var chainEndpoints []T.Endpoint
+		var chainIPv6 map[string]bool
+		detourTag := ""
+		nextCounter := counter
+		validChain := true
 
 		chains := strings.Split(expandLinks(config), " -> ")
 		for i := len(chains) - 1; i >= 0; i-- {
-			chain1 := chains[i]
-
-			// fmt.Printf("%s", chain)
-			chain, _ := decodeBase64IfNeeded(chain1)
+			chain, _ := decodeBase64IfNeeded(strings.TrimSpace(chains[i]))
 			if isSubscriptionInfoEntry(chain) {
 				continue
 			}
 			outend, err := processSingleConfig(chain, useXrayWhenPossible)
-
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error in %s \n %v\n", config, err)
-
-				continue
+				// Do not log the original URI (it can contain credentials,
+				// WireGuard private keys, or tokens). Continue with other
+				// independent subscription entries.
+				failedConfigs++
+				validChain = false
+				break
 			}
 
-			if carried, declared := ipv6Hint(chain); declared {
-				if declaredIPv6 == nil {
-					declaredIPv6 = make(map[string]bool)
-				}
-				if outend.outbound != nil {
-					declaredIPv6[outend.outbound.Tag+" § "+strconv.Itoa(counter)] = carried
-				} else if outend.endpoint != nil {
-					declaredIPv6[outend.endpoint.Tag+" § "+strconv.Itoa(counter)] = carried
-				}
-			}
+			suffix := " § " + strconv.Itoa(nextCounter)
 			if outend.outbound != nil {
-				outend.outbound.Tag += " § " + strconv.Itoa(counter)
+				outend.outbound.Tag += suffix
+				if carried, declared := ipv6Hint(chain); declared {
+					if chainIPv6 == nil {
+						chainIPv6 = make(map[string]bool)
+					}
+					chainIPv6[outend.outbound.Tag] = carried
+				}
 				if dialerOpt, ok := outend.outbound.Options.(T.DialerOptionsWrapper); ok {
 					d := dialerOpt.TakeDialerOptions()
 					d.Detour = detourTag
@@ -196,12 +186,16 @@ func GenerateConfigLite(input string, useXrayWhenPossible bool) (*option.Options
 				if detourTag != "" {
 					disableMasqueScanner(outend.outbound)
 				}
-
 				detourTag = outend.outbound.Tag
-				outbounds = append(outbounds, *outend.outbound)
-
-			} else if outend.endpoint != nil {
-				outend.endpoint.Tag += " § " + strconv.Itoa(counter)
+				chainOutbounds = append(chainOutbounds, *outend.outbound)
+			} else {
+				outend.endpoint.Tag += suffix
+				if carried, declared := ipv6Hint(chain); declared {
+					if chainIPv6 == nil {
+						chainIPv6 = make(map[string]bool)
+					}
+					chainIPv6[outend.endpoint.Tag] = carried
+				}
 				if dialerOpt, ok := outend.endpoint.Options.(T.DialerOptionsWrapper); ok {
 					d := dialerOpt.TakeDialerOptions()
 					d.Detour = detourTag
@@ -210,19 +204,32 @@ func GenerateConfigLite(input string, useXrayWhenPossible bool) (*option.Options
 				if detourTag != "" {
 					warpBehindDetour(outend.endpoint)
 				}
-
 				detourTag = outend.endpoint.Tag
-				endpoints = append(endpoints, *outend.endpoint)
-
+				chainEndpoints = append(chainEndpoints, *outend.endpoint)
 			}
-
-			counter += 1
-
+			nextCounter++
 		}
 
+		if !validChain {
+			continue
+		}
+		outbounds = append(outbounds, chainOutbounds...)
+		endpoints = append(endpoints, chainEndpoints...)
+		if len(chainIPv6) > 0 {
+			if declaredIPv6 == nil {
+				declaredIPv6 = make(map[string]bool)
+			}
+			for tag, carried := range chainIPv6 {
+				declaredIPv6[tag] = carried
+			}
+		}
+		counter = nextCounter
 	}
 
 	if len(outbounds) == 0 && len(endpoints) == 0 {
+		if failedConfigs > 0 {
+			return nil, fmt.Errorf("No outbounds found: %d invalid configuration(s)", failedConfigs)
+		}
 		return nil, E.New("No outbounds found")
 	}
 
@@ -231,7 +238,6 @@ func GenerateConfigLite(input string, useXrayWhenPossible bool) (*option.Options
 		Endpoints: endpoints,
 	}
 	declareIPv6(&fullConfig, declaredIPv6)
-
 	return &fullConfig, nil
 }
 
@@ -250,10 +256,7 @@ func Ray2SingboxOptions(ctx context.Context, configs string, useXrayWhenPossible
 	defer func() {
 		if r := recover(); r != nil {
 			out = nil
-			stackTrace := make([]byte, 1024)
-			s := runtime.Stack(stackTrace, false)
-			stackStr := fmt.Sprint(string(stackTrace[:s]))
-			err = E.New("Error in Parsing", configs, r, "Stack trace:", stackStr)
+			err = fmt.Errorf("panic while parsing configuration (%T)", r)
 
 		}
 	}()
