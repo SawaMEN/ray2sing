@@ -94,10 +94,10 @@ require (
 	github.com/go-chi/chi/v5 v5.2.5 // indirect
 	github.com/go-chi/render v1.0.3 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260820222146-c27c302e5fc3 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go4org/hashtriemap v0.0.0-20251130024219-545ba229f689 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.4.0 // indirect
@@ -129,7 +129,7 @@ require (
 	github.com/kamstrup/intmap v0.5.2 // indirect
 	github.com/keybase/go-keychain v0.0.1 // indirect
 	github.com/kianmhz/GooseRelayVPN v0.0.0-20260429125124-0e68c2a3ae4c // indirect
-	github.com/klauspost/compress v1.20.0 // indirect
+	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.1 // indirect
 	github.com/klauspost/reedsolomon v1.14.2 // indirect
 	github.com/koron/go-ssdp v0.0.4 // indirect
@@ -143,10 +143,12 @@ require (
 	github.com/libp2p/go-netroute v0.2.1 // indirect
 	github.com/libp2p/go-reuseport v0.4.0 // indirect
 	github.com/lithammer/shortuuid/v4 v4.2.0 // indirect
+	github.com/livekit/mageutil v0.0.0-20250511045019-0f1ff63f7731 // indirect
 	github.com/livekit/mediatransportutil v0.0.0-20260605212259-862d4a7bcb1e // indirect
 	github.com/livekit/protocol v1.50.1 // indirect
 	github.com/livekit/psrpc v0.7.2 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
+	github.com/magefile/mage v1.17.2 // indirect
 	github.com/makiuchi-d/gozxing v0.1.1 // indirect
 	github.com/marusama/semaphore v0.0.0-20171214154724-565ffd8e868a // indirect
 	github.com/mdlayher/netlink v1.11.2 // indirect
@@ -155,6 +157,7 @@ require (
 	github.com/mholt/acmez/v3 v3.1.6 // indirect
 	github.com/miekg/dns v1.1.73 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
+	github.com/molecule-man/go-brrr v1.2.0 // indirect
 	github.com/mroth/weightedrand v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nats-io/nats.go v1.52.0 // indirect
@@ -194,6 +197,7 @@ require (
 	github.com/pires/go-proxyproto v0.16.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.10 // indirect
+	github.com/prometheus-community/pro-bing v0.4.0 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.68.1 // indirect
@@ -206,7 +210,7 @@ require (
 	github.com/refraction-networking/ed25519 v0.1.2 // indirect
 	github.com/refraction-networking/gotapdance v1.7.10 // indirect
 	github.com/refraction-networking/obfs4 v0.1.2 // indirect
-	github.com/refraction-networking/utls v1.8.3-0.20260301010127-aa6edf4b11af // indirect
+	github.com/refraction-networking/utls v1.8.3-0.20261108164504-a13c59ffe98b // indirect
 	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/sagernet/bbolt v0.0.0-20260915102804-500ee1e84832 // indirect
 	github.com/sagernet/cors v1.2.1 // indirect
@@ -339,7 +343,6 @@ require (
 	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gvisor.dev/gvisor v0.0.0-20260122175437-89a5d21be8f0 // indirect
 	layeh.com/gopher-luar v1.0.11 // indirect
 	lukechampine.com/blake3 v1.4.1 // indirect
 	masterdnsvpn-go v0.0.0 // indirect
@@ -352,6 +355,7 @@ require (
 replace github.com/sagernet/sing-box => ../hiddify-sing-box
 
 replace github.com/xtls/xray-core => ../hiddify-sing-box/third_party/xray-core
+
 replace github.com/sagernet/wireguard-go => ../hiddify-sing-box/replace/wireguard-go
 
 replace github.com/sagernet/sing-dns => github.com/shtorm-7/sing-dns v0.4.6-extended-1.0.0

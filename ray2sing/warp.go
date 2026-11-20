@@ -155,6 +155,7 @@ func WarpSingbox(url string) (*T.Endpoint, error) {
 		MaxRTT:      warpDuration(param("max_rtt", "scan_max_rtt")),
 		Timeout:     warpDuration(param("scan_timeout")),
 	}
+	setEdgeSearchOptions(scanner, param)
 	for _, port := range splitList(param("scan_ports")) {
 		if value := toInt(port); value > 0 && value < 65536 {
 			scanner.Ports = append(scanner.Ports, uint16(value))

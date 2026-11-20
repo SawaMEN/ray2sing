@@ -1,6 +1,8 @@
 package ray2sing
 
 import (
+	"strings"
+
 	T "github.com/sagernet/sing-box/option"
 )
 
@@ -12,7 +14,8 @@ func Hysteria2Singbox(hysteria2Url string) (*T.Outbound, error) {
 	decoded := u.Params
 	var ObfsOpts *T.Hysteria2Obfs
 	ObfsOpts = nil
-	if obfs, ok := decoded["obfs"]; ok && obfs != "" {
+	// "obfs=none" (and "plain") means no obfuscation; sing-box rejects them as an obfs type
+	if obfs := strings.ToLower(decoded["obfs"]); obfs != "" && obfs != "none" && obfs != "plain" {
 		ObfsOpts = &T.Hysteria2Obfs{
 			Type:     obfs,
 			Password: decoded["obfspassword"],
@@ -41,26 +44,25 @@ func Hysteria2Singbox(hysteria2Url string) (*T.Outbound, error) {
 	if u.Password != "" {
 		pass += ":" + u.Password
 	}
-	result := T.Outbound{
-		Type: "hysteria2",
-		Tag:  u.Name,
-		Options: &T.Hysteria2OutboundOptions{
-			ServerOptions: u.GetServerOption(),
-			ServerPorts:   u.PortRanges,
-			Obfs:          ObfsOpts,
-			Password:      pass,
-			OutboundTLSOptionsContainer: T.OutboundTLSOptionsContainer{
-				TLS: &T.OutboundTLSOptions{
-					Enabled:    true,
-					Insecure:   decoded["insecure"] == "1",
-					DisableSNI: isIPOnly(SNI),
-					ServerName: SNI,
-					ECH:        ECHOpts,
-				},
+	opts := &T.Hysteria2OutboundOptions{
+		ServerOptions: u.GetServerOption(),
+		ServerPorts:   u.PortRanges,
+		Obfs:          ObfsOpts,
+		Password:      pass,
+		OutboundTLSOptionsContainer: T.OutboundTLSOptionsContainer{
+			TLS: &T.OutboundTLSOptions{
+				Enabled:    true,
+				Insecure:   decoded["insecure"] == "1",
+				DisableSNI: isIPOnly(SNI),
+				ServerName: SNI,
+				ECH:        ECHOpts,
 			},
-			// TurnRelay: turnRelay,
 		},
+		// TurnRelay: turnRelay,
+	}
+	if err := applyHysteria2FinalMask(hysteria2Url, opts); err != nil {
+		return nil, err
 	}
 
-	return &result, nil
+	return &T.Outbound{Type: "hysteria2", Tag: u.Name, Options: opts}, nil
 }

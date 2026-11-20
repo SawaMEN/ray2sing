@@ -51,28 +51,32 @@ func getRealityKeyShare(decoded map[string]string) string {
 	return strings.ToLower(keyShare)
 }
 
+// getTLSServerName picks the SNI as v2rayN does: sni, then the first transport host, then the vmess
+// JSON address. Empty leaves it to the core, which uses the server address. Without the host step
+// a link whose address is a CDN IP and whose domain is only in host sends the IP as SNI and fails.
+func getTLSServerName(decoded map[string]string) string {
+	if sni := strings.TrimSpace(decoded["sni"]); sni != "" {
+		return sni
+	}
+	if host := strings.TrimSpace(strings.Split(decoded["host"], ",")[0]); host != "" {
+		if h, _, err := net.SplitHostPort(host); err == nil {
+			host = h
+		}
+		return host
+	}
+	return decoded["add"]
+}
+
 func getTLSOptions(decoded map[string]string) T.OutboundTLSOptionsContainer {
 	if !(decoded["tls"] == "tls" || decoded["security"] == "tls" || isReality(decoded)) {
 		return T.OutboundTLSOptionsContainer{TLS: nil}
 	}
 
-	serverName := decoded["sni"]
-	if serverName == "" {
-		serverName = decoded["add"]
-	}
+	serverName := getTLSServerName(decoded)
 
 	var ECHOpts *option.OutboundECHOptions
-	valECH, hasECH := decoded["ech"]
-	if hasECH {
-		ECHOpts = &option.OutboundECHOptions{
-			Enabled: true,
-		}
-		if len(valECH) > 5 {
-			if !strings.Contains(valECH, "-----BEGIN ECH CONFIGS-----") {
-				valECH = "-----BEGIN ECH CONFIGS-----\n" + valECH + "\n-----END ECH CONFIGS-----"
-			}
-			ECHOpts.Config = badoption.Listable[string]{valECH}
-		}
+	if valECH, hasECH := decoded["ech"]; hasECH {
+		ECHOpts = getECHOptions(valECH)
 	}
 
 	fp := decoded["fp"]
@@ -352,7 +356,11 @@ func getTransportOptions(decoded map[string]string) (*option.V2RayTransportOptio
 
 		if extra, ok := decoded["extra"]; ok {
 			x := XHTTPExtra{}
-			err := json.Unmarshal([]byte(extra), &x)
+			snakeExtra, err := xrayExtraToSnake([]byte(extra))
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(snakeExtra, &x)
 			if err != nil {
 				return nil, err
 			}
@@ -631,4 +639,28 @@ func getOneOfN(dic map[string]string, defaultval string, headers ...string) stri
 		}
 	}
 	return defaultval
+}
+
+// getECHOptions reads a link's ech=, Xray's echConfigList: a base64 ECHConfigList (or its PEM), or a DNS server to
+// fetch it from by an HTTPS record ("udp://1.1.1.1", "https://1.1.1.1/dns-query"), optionally after the domain to
+// query instead of the server name ("cloudflare-ech.com+udp://1.1.1.1"). sing-box fetches it through its own DNS,
+// so the DNS server is not used; a short value ("1") only enables ECH, fetched for the server name.
+func getECHOptions(value string) *option.OutboundECHOptions {
+	options := &option.OutboundECHOptions{Enabled: true}
+	value = strings.TrimSpace(value)
+	if scheme := strings.Index(value, "://"); scheme >= 0 {
+		// a "+" read as a space from an unescaped link
+		if plus := strings.LastIndexAny(value[:scheme], "+ "); plus >= 0 {
+			options.QueryServerName = strings.TrimSpace(value[:plus])
+		}
+		return options
+	}
+	if len(value) > 5 {
+		if !strings.Contains(value, "-----BEGIN ECH CONFIGS-----") {
+			// a "+" of base64 read as a space from an unescaped link
+			value = "-----BEGIN ECH CONFIGS-----\n" + strings.ReplaceAll(value, " ", "+") + "\n-----END ECH CONFIGS-----"
+		}
+		options.Config = badoption.Listable[string]{value}
+	}
+	return options
 }
