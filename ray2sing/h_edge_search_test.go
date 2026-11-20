@@ -40,14 +40,14 @@ func TestEdgeSearchOptionsWhenEngineSupportsThem(t *testing.T) {
 	param := func(keys ...string) string { return getOneOfN(params, "", keys...) }
 	scanner := &testOptionalScanner{}
 	setEdgeSearchOptions(scanner, param)
-	if time.Duration(scanner.SearchTimeout) != 300*time.Second ||
-		scanner.DeepConcurrency != 48 || scanner.BlockBitsIPv4 != 24 ||
-		scanner.BlockBitsIPv6 != 56 {
+	if time.Duration(scanner.EdgeSearchOptions.SearchTimeout) != 300*time.Second ||
+		scanner.EdgeSearchOptions.DeepConcurrency != 48 || scanner.EdgeSearchOptions.BlockBitsIPv4 != 24 ||
+		scanner.EdgeSearchOptions.BlockBitsIPv6 != 56 {
 		t.Fatalf("search options not preserved: %+v", scanner)
 	}
 	params["searchtimeout"] = "deep"
 	setEdgeSearchOptions(scanner, param)
-	if scanner.SearchTimeout >= 0 {
+	if scanner.EdgeSearchOptions.SearchTimeout >= 0 {
 		t.Fatalf("expected unlimited search: %+v", scanner)
 	}
 }
@@ -62,8 +62,8 @@ func TestOptionalPsiphonScannerURLParameters(t *testing.T) {
 	scanner := opts.Scanner
 	if scanner == nil || scanner.Enabled == nil || !*scanner.Enabled ||
 		len(scanner.Sets) != 2 || scanner.Candidates != 3 ||
-		scanner.DeepConcurrency != 64 || scanner.BlockBitsIPv4 != 22 ||
-		time.Duration(scanner.SearchTimeout) != 2*time.Hour ||
+		scanner.EdgeSearchOptions.DeepConcurrency != 64 || scanner.EdgeSearchOptions.BlockBitsIPv4 != 22 ||
+		time.Duration(scanner.EdgeSearchOptions.SearchTimeout) != 2*time.Hour ||
 		len(scanner.CIDRs) != 1 {
 		t.Fatalf("failed to read scanner parameters: %+v", scanner)
 	}
